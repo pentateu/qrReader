@@ -13,9 +13,7 @@
     <script src="components/supersonic/supersonic.js"></script>
     <script src="components/webcomponentsjs/webcomponents.js"></script>
 
-    <script src="components/momentjs/min/moment.min.js"></script>
-
-    <script src="app/example.js"></script>
+    <script src="app/module.js"></script>
 
     <style>
       body {
@@ -25,28 +23,10 @@
   </head>
 
   <body>
-    <h1>Hello Module!</h1>
-
-    <p>
-      My name is src/index.html.
-    </p>
-
-    <p>
-      It is now: <span id="current-day"></span>
-    </p>
-
-    <p>
-      Using the example date format defined in Composer 2.0,
-      the date is: <span id="example-date"></span>.
-    </p>
-
-    <p>
-      Here are my users:
-      <ul class="list">
-      <super-data-repeat model="users">
-        <li class="item">{{ username }}</li>
-      </super-data-repeat>
-      </ul>
-    </p>
+    <button id="openReaderBtn" class="button button-block">
+      Scan
+    </button>
+    <div id="result">
+    </div>
   </body>
 </html>
