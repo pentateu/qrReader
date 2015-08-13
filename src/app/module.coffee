@@ -8,19 +8,19 @@ class QRReaderModule
 
   onTap: (element, fn) -> element?.addEventListener "touchstart", fn, false
 
-  # Parse the code to identify which form should be called
+  # TODO: Parse the code to identify which form should be called
   # to display the details about this record
   parseQRCode: (text) ->
 
-  ###
-  url = "http://localhost/views/#{targetForm}Show/index.html?id=#{recordId}&record-id=#{recordId}"
-  console.log "INFO: open detail page - url: #{url}"
-  supersonic.module.layers.push url
-  ###
   pushFormDetail: (targetForm, recordId) -> supersonic.module.layers.push "data.#{targetForm}.show", { id: recordId }
 
-  #TODO: Remove the someTest parameter bellow
-  pushQRDisplay: (recordId) => supersonic.module.layers.push QR_DISPLAY_MODULE_ID, {id:recordId, someTest:"Hello from QRMOdule"}
+  pushQRDisplay: (recordId) =>
+    resourceInfo = supersonic.module.attributes.get "qrdisplay-resource-info"
+    supersonic.module.layers.push(
+      QR_DISPLAY_MODULE_ID,
+      {id:recordId, "resource-info":resourceInfo}
+    ).catch (error) =>
+      alert "Could not show the QRDisplay module. Error: #{error}"
 
   notifyQRDisplay: (recordId) => supersonic.data.channel('QRDisplay-show').publish(recordId)
 
@@ -75,7 +75,7 @@ class QRReaderModule
     else
       console.log "ERROR: could not find the button element."
 
-    ##TODO: The test code below
+    ##TODO: Remove the test code below
     navDisplay = document.querySelector "#navDisplay"
     @onTap navDisplay, => @pushQRDisplay "55c87f7706884a0011000004"
 
