@@ -1,48 +1,50 @@
 
+QR_DISPLAY_MODULE_ID = "nz.co.iswe.modules.qrdisplay"
+
 class QRReaderModule
-  notInApp: ->
-    console.log "notInApp --> navigator.userAgent: #{navigator.userAgent}"
-    navigator.userAgent.indexOf("AppGyverSteroids") == -1
+  notInApp: -> navigator.userAgent.indexOf("AppGyverSteroids") == -1
 
-  pluginAvailable: ->
-    cordova?.plugins?.barcodeScanner?.scan?
+  pluginAvailable: -> cordova?.plugins?.barcodeScanner?.scan?
 
-  onTap: (element, fn) ->
-    element?.addEventListener "touchstart", fn, false
+  onTap: (element, fn) -> element?.addEventListener "touchstart", fn, false
 
   # Parse the code to identify which form should be called
   # to display the details about this record
   parseQRCode: (text) ->
-    
 
-  openDetailView: (targetForm, recordId) ->
-    url = "http://localhost/views/#{targetForm}Show/index.html?id=#{recordId}&record-id=#{recordId}"
-    console.log "INFO: open detail page - url: #{url}"
-    supersonic.module.layers.push url
-    #supersonic.module.layers.push “data.#{targetForm}.new”, { id: recordId }
+  ###
+  url = "http://localhost/views/#{targetForm}Show/index.html?id=#{recordId}&record-id=#{recordId}"
+  console.log "INFO: open detail page - url: #{url}"
+  supersonic.module.layers.push url
+  ###
+  pushFormDetail: (targetForm, recordId) -> supersonic.module.layers.push "data.#{targetForm}.show", { id: recordId }
 
-  openQRDisplay: (recordId) ->
-    supersonic.module.layers.push "QRDisplay", {id:recordId}
+  #TODO: Remove the someTest parameter bellow
+  pushQRDisplay: (recordId) => supersonic.module.layers.push QR_DISPLAY_MODULE_ID, {id:recordId, someTest:"Hello from QRMOdule"}
 
-  processScanResult: (text) ->
+  notifyQRDisplay: (recordId) => supersonic.data.channel('QRDisplay-show').publish(recordId)
+
+  processScanResult: (text) =>
     targetForm = supersonic.module.attributes.get "target-form"
-    detailView = supersonic.module.attributes.get "detail-view"
+    detailBehaviour = supersonic.module.attributes.get "detail-behaviour"
 
-    if detailView == "QRDisplay Module"
-      @openQRDisplay text
-    else if detailView == "Form Detail Page" && targetForm?
-      @openDetailView targetForm, text
+    if detailBehaviour == "New View - QRDisplay"
+      @pushQRDisplay text
+    else if detailBehaviour == "New View - Form Detail" && targetForm?
+      @pushFormDetail targetForm, text
+    else if detailBehaviour == "Same View - QRDisplay"
+      @notifyQRDisplay text
     else
       # @parseQRCode text
       # TODO: Show Error
 
-  onScanResults: (result) ->
+  onScanResults: (result) =>
     if result.cancelled
       console.log "INFO: Scan action cancelled !"
     else
       @processScanResult result.text
 
-  onScanError: (error) ->
+  onScanError: (error) =>
     errorMsg = error
     if error == "unable to obtain video capture device input"
       errorMsg = "Could not access Camera. To fix this, switch to the Settings app, and go to:\n\n  Privacy > Camera\n\nThen, ensure the slider is enabled (green) for the Enterprise app."
@@ -51,27 +53,30 @@ class QRReaderModule
 
     alert errorMsg
 
-  openReader: ->
+  openReader: =>
     if @notInApp()
-      return alert "This plugin is only support in mobile apps."
-
-    if @pluginAvailable()
-      cordova.plugins.barcodeScanner.scan onScanResults, onScanError
+      alert "This plugin is only support in mobile apps."
+    else if @pluginAvailable()
+      cordova.plugins.barcodeScanner.scan @onScanResults, @onScanError
     else
       alert "Barcode Scanner Plugin not available!"
 
-  setupButtonLabel: (btn) ->
-    buttonLabel = supersonic.module.attributes.get "button-label"
-    if btn? && buttonLabel?
-      btn.innerText = buttonLabel
+  setupButton: =>
+    @onTap @btn, @openReader
 
-  start: ->
-    @btn = document.getElementById "openReaderBtn"
+    buttonLabel = supersonic.module.attributes.get "button-label"
+    if @btn? && buttonLabel?
+      @btn.innerText = buttonLabel
+
+  start: =>
+    @btn = document.querySelector "#openReaderBtn"
     if @btn?
-      onTap @btn, @openReader
-      @setupButtonLabel @btn
+      @setupButton()
     else
       console.log "ERROR: could not find the button element."
 
+    ##TODO: The test code below
+    navDisplay = document.querySelector "#navDisplay"
+    @onTap navDisplay, => @pushQRDisplay "55c87f7706884a0011000004"
 
 document.addEventListener "DOMContentLoaded", new QRReaderModule().start
