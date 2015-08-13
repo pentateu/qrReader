@@ -75,8 +75,4 @@ class QRReaderModule
     else
       console.log "ERROR: could not find the button element."
 
-    ##TODO: Remove the test code below
-    navDisplay = document.querySelector "#navDisplay"
-    @onTap navDisplay, => @pushQRDisplay "55c87f7706884a0011000004"
-
 document.addEventListener "DOMContentLoaded", new QRReaderModule().start
