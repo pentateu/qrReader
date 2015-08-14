@@ -1,6 +1,3 @@
-
-QR_DISPLAY_MODULE_ID = "nz.co.iswe.modules.qrdisplay"
-
 class QRReaderModule
   notInApp: -> navigator.userAgent.indexOf("AppGyverSteroids") == -1
 
@@ -8,35 +5,23 @@ class QRReaderModule
 
   onTap: (element, fn) -> element?.addEventListener "touchstart", fn, false
 
-  # TODO: Parse the code to identify which form should be called
-  # to display the details about this record
-  parseQRCode: (text) ->
+  pushFormDetail: (collection, id) -> supersonic.module.layers.push "data.#{collection}.show", { id: id }
 
-  pushFormDetail: (targetForm, recordId) -> supersonic.module.layers.push "data.#{targetForm}.show", { id: recordId }
+  #TODO: add regular expression for the validation
+  validCode: (code) =>
+    true
 
-  pushQRDisplay: (recordId) =>
-    resourceInfo = supersonic.module.attributes.get "qrdisplay-resource-info"
-    supersonic.module.layers.push(
-      QR_DISPLAY_MODULE_ID,
-      {id:recordId, "resource-info":resourceInfo}
-    ).catch (error) =>
-      alert "Could not show the QRDisplay module. Error: #{error}"
+  #extract the collection name and id of the item
+  parseCode: (code) =>
+    parts = code.split(":")
+    return (parts[0], parts[1])
 
-  notifyQRDisplay: (recordId) => supersonic.data.channel('QRDisplay-show').publish(recordId)
-
-  processScanResult: (text) =>
-    targetForm = supersonic.module.attributes.get "target-form"
-    detailBehaviour = supersonic.module.attributes.get "detail-behaviour"
-
-    if detailBehaviour == "New View - QRDisplay"
-      @pushQRDisplay text
-    else if detailBehaviour == "New View - Form Detail" && targetForm?
-      @pushFormDetail targetForm, text
-    else if detailBehaviour == "Same View - QRDisplay"
-      @notifyQRDisplay text
+  processScanResult: (code) =>
+    if @validCode code
+      (collection, id) = @parseCode code
+      @pushFormDetail collection, id
     else
-      # @parseQRCode text
-      # TODO: Show Error
+      alert "Invalid code!"
 
   onScanResults: (result) =>
     if result.cancelled
@@ -50,12 +35,11 @@ class QRReaderModule
       errorMsg = "Could not access Camera. To fix this, switch to the Settings app, and go to:\n\n  Privacy > Camera\n\nThen, ensure the slider is enabled (green) for the Enterprise app."
 
     console.log "ERROR: #{errorMsg}"
-
     alert errorMsg
 
   openReader: =>
     if @notInApp()
-      alert "This plugin is only support in mobile apps."
+      alert "This plugin is only supported in mobile apps."
     else if @pluginAvailable()
       cordova.plugins.barcodeScanner.scan @onScanResults, @onScanError
     else
