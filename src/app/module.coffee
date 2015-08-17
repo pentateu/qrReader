@@ -1,5 +1,7 @@
 class QRReaderModule
-  notInApp: -> navigator.userAgent.indexOf("AppGyverSteroids") == -1
+  isInApp: ->
+    [navigator.userAgent, window.parent.navigator.userAgent]
+      .reduce ((value, userAgent) -> userAgent.indexOf("AppGyverSteroids") != -1 || value), false
 
   pluginAvailable: -> cordova?.plugins?.barcodeScanner?.scan?
 
@@ -12,7 +14,7 @@ class QRReaderModule
     true
 
   #extract the collection name and id of the item
-  parseCode: (code) =>
+  parseCode: (code) ->
     parts = code.split(":")
     return {
       collection:parts[0]
@@ -31,7 +33,7 @@ class QRReaderModule
     else
       @processScanResult result.text
 
-  onScanError: (error) =>
+  onScanError: (error) ->
     errorMsg = error
     if error == "unable to obtain video capture device input"
       errorMsg = "Could not access Camera. To fix this, switch to the Settings app, and go to:\n\n  Privacy > Camera\n\nThen, ensure the slider is enabled (green) for the Enterprise app."
@@ -39,13 +41,23 @@ class QRReaderModule
     console.log "ERROR: #{errorMsg}"
     alert errorMsg
 
+  scanBarCodeAPI: (onScanResults, onScanError) =>
+    steroids.nativeBridge.nativeCall
+      method: "scanBarCode"
+      successCallbacks:[]
+      failureCallbacks:[onScanError]
+      recurringCallbacks: [onScanResults]
+
+  isAndroid:->
+    true
+
   openReader: =>
-    if @notInApp()
+    if ! @isInApp()
       alert "This plugin is only supported in mobile apps."
     else if @pluginAvailable()
       cordova.plugins.barcodeScanner.scan @onScanResults, @onScanError
     else
-      alert "Barcode Scanner Plugin not available!"
+      @scanBarCodeAPI @onScanResults, @onScanError
 
   setupButton: =>
     @onTap @btn, @openReader
