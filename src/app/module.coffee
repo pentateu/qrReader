@@ -7,11 +7,10 @@ class QRReaderModule
 
   onTap: (element, fn) -> element?.addEventListener "touchstart", fn, false
 
-  pushFormDetail: (params) -> supersonic.module.layers.push "data.#{params.collection}.show", { id: params.id }
+  pushFormDetail: (params) -> supersonic.module.layers.push "data.#{params.collection}.show", { id: params.id, 'record-id': params.id }
 
-  #TODO: add regular expression for the validation
   validCode: (code) =>
-    true
+    code? && code.match(/^(.*):(.*)$/)?
 
   #extract the collection name and id of the item
   parseCode: (code) ->
